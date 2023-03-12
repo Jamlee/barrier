@@ -1,0 +1,346 @@
+From ed373612b7cb1705ab3de0d2a500f9ba1781e2d8 Mon Sep 17 00:00:00 2001
+From: Dennis Gentry <dennis.gentry@gmail.com>
+Date: Wed, 6 Jul 2022 16:16:37 -0700
+Subject: [PATCH 1/3] Fix Broken Tilde and Grave (Backtick/Backquote)
+
+---
+ .../1541-fix-broken-tilde-and-grave           |  3 ++
+ src/gui/src/Screen.cpp                        | 10 ++---
+ src/gui/src/ServerConfig.cpp                  | 38 +++++++++----------
+ src/lib/platform/OSXKeyState.cpp              |  2 -
+ 4 files changed, 27 insertions(+), 26 deletions(-)
+ create mode 100644 doc/newsfragments/1541-fix-broken-tilde-and-grave
+
+diff --git a/doc/newsfragments/1541-fix-broken-tilde-and-grave b/doc/newsfragments/1541-fix-broken-tilde-and-grave
+new file mode 100644
+index 0000000000..55d131965a
+--- /dev/null
++++ b/doc/newsfragments/1541-fix-broken-tilde-and-grave
+@@ -0,0 +1,3 @@
++Fix the regression introduced in #1214 that caused tilde (~) and grave
++(`) to stop being sendable from at least a MacOS Barrier Server (and
++probably others).  Fixes Issues #1541 and #1407
+diff --git a/src/gui/src/Screen.cpp b/src/gui/src/Screen.cpp
+index 1e3b8884fa..a694bcea46 100644
+--- a/src/gui/src/Screen.cpp
++++ b/src/gui/src/Screen.cpp
+@@ -91,19 +91,19 @@ void Screen::saveSettings(QSettings& settings) const
+ 
+ QTextStream& Screen::writeScreensSection(QTextStream& outStream) const
+ {
+-    outStream << "\t" << name() << ":" << endl;
++  outStream << "\t" << name() << ":" << Qt::endl;
+ 
+     for (int i = 0; i < modifiers().size(); i++) {
+         auto mod = static_cast<Modifier>(i);
+         if (modifier(mod) != mod) {
+             outStream << "\t\t" << modifierName(mod) << " = " << modifierName(modifier(mod))
+-                      << endl;
++                      << Qt::endl;
+         }
+     }
+ 
+     for (int i = 0; i < fixes().size(); i++) {
+         auto fix = static_cast<Fix>(i);
+-        outStream << "\t\t" << fixName(fix) << " = " << (fixes()[i] ? "true" : "false") << endl;
++        outStream << "\t\t" << fixName(fix) << " = " << (fixes()[i] ? "true" : "false") << Qt::endl;
+     }
+ 
+     outStream << "\t\t" << "switchCorners = none ";
+@@ -112,9 +112,9 @@ QTextStream& Screen::writeScreensSection(QTextStream& outStream) const
+             outStream << "+" << switchCornerName(static_cast<SwitchCorner>(i)) << " ";
+         }
+     }
+-    outStream << endl;
++    outStream << Qt::endl;
+ 
+-    outStream << "\t\t" << "switchCornerSize = " << switchCornerSize() << endl;
++    outStream << "\t\t" << "switchCornerSize = " << switchCornerSize() << Qt::endl;
+ 
+     return outStream;
+ }
+diff --git a/src/gui/src/ServerConfig.cpp b/src/gui/src/ServerConfig.cpp
+index 3392572a1b..856db6739b 100644
+--- a/src/gui/src/ServerConfig.cpp
++++ b/src/gui/src/ServerConfig.cpp
+@@ -210,56 +210,56 @@ int ServerConfig::adjacentScreenIndex(int idx, int deltaColumn, int deltaRow) co
+ 
+ QTextStream& operator<<(QTextStream& outStream, const ServerConfig& config)
+ {
+-    outStream << "section: screens" << endl;
++    outStream << "section: screens" << Qt::endl;
+ 
+     for (const Screen& s : config.screens()) {
+         if (!s.isNull())
+             s.writeScreensSection(outStream);
+     }
+ 
+-    outStream << "end" << endl << endl;
++    outStream << "end" << Qt::endl << Qt::endl;
+ 
+-    outStream << "section: aliases" << endl;
++    outStream << "section: aliases" << Qt::endl;
+ 
+     for (const Screen& s : config.screens()) {
+         if (!s.isNull())
+             s.writeAliasesSection(outStream);
+     }
+ 
+-    outStream << "end" << endl << endl;
++    outStream << "end" << Qt::endl << Qt::endl;
+ 
+-    outStream << "section: links" << endl;
++    outStream << "section: links" << Qt::endl;
+ 
+     for (int i = 0; i < config.screens().size(); i++)
+         if (!config.screens()[i].isNull())
+         {
+-            outStream << "\t" << config.screens()[i].name() << ":" << endl;
++            outStream << "\t" << config.screens()[i].name() << ":" << Qt::endl;
+ 
+             for (unsigned int j = 0; j < sizeof(neighbourDirs) / sizeof(neighbourDirs[0]); j++)
+             {
+                 int idx = config.adjacentScreenIndex(i, neighbourDirs[j].x, neighbourDirs[j].y);
+                 if (idx != -1 && !config.screens()[idx].isNull())
+-                    outStream << "\t\t" << neighbourDirs[j].name << " = " << config.screens()[idx].name() << endl;
++                    outStream << "\t\t" << neighbourDirs[j].name << " = " << config.screens()[idx].name() << Qt::endl;
+             }
+         }
+ 
+-    outStream << "end" << endl << endl;
++    outStream << "end" << Qt::endl << Qt::endl;
+ 
+-    outStream << "section: options" << endl;
++    outStream << "section: options" << Qt::endl;
+ 
+     if (config.hasHeartbeat())
+-        outStream << "\t" << "heartbeat = " << config.heartbeat() << endl;
++        outStream << "\t" << "heartbeat = " << config.heartbeat() << Qt::endl;
+ 
+-    outStream << "\t" << "relativeMouseMoves = " << (config.relativeMouseMoves() ? "true" : "false") << endl;
+-    outStream << "\t" << "screenSaverSync = " << (config.screenSaverSync() ? "true" : "false") << endl;
+-    outStream << "\t" << "win32KeepForeground = " << (config.win32KeepForeground() ? "true" : "false") << endl;
+-    outStream << "\t" << "clipboardSharing = " << (config.clipboardSharing() ? "true" : "false") << endl;
++    outStream << "\t" << "relativeMouseMoves = " << (config.relativeMouseMoves() ? "true" : "false") << Qt::endl;
++    outStream << "\t" << "screenSaverSync = " << (config.screenSaverSync() ? "true" : "false") << Qt::endl;
++    outStream << "\t" << "win32KeepForeground = " << (config.win32KeepForeground() ? "true" : "false") << Qt::endl;
++    outStream << "\t" << "clipboardSharing = " << (config.clipboardSharing() ? "true" : "false") << Qt::endl;
+ 
+     if (config.hasSwitchDelay())
+-        outStream << "\t" << "switchDelay = " << config.switchDelay() << endl;
++        outStream << "\t" << "switchDelay = " << config.switchDelay() << Qt::endl;
+ 
+     if (config.hasSwitchDoubleTap())
+-        outStream << "\t" << "switchDoubleTap = " << config.switchDoubleTap() << endl;
++        outStream << "\t" << "switchDoubleTap = " << config.switchDoubleTap() << Qt::endl;
+ 
+     outStream << "\t" << "switchCorners = none ";
+     for (int i = 0; i < config.switchCorners().size(); i++) {
+@@ -268,15 +268,15 @@ QTextStream& operator<<(QTextStream& outStream, const ServerConfig& config)
+             outStream << "+" << config.switchCornerName(corner) << " ";
+         }
+     }
+-    outStream << endl;
++    outStream << Qt::endl;
+ 
+-    outStream << "\t" << "switchCornerSize = " << config.switchCornerSize() << endl;
++    outStream << "\t" << "switchCornerSize = " << config.switchCornerSize() << Qt::endl;
+ 
+     for (const Hotkey& hotkey : config.hotkeys()) {
+         outStream << hotkey;
+     }
+ 
+-    outStream << "end" << endl << endl;
++    outStream << "end" << Qt::endl << Qt::endl;
+ 
+     return outStream;
+ }
+diff --git a/src/lib/platform/OSXKeyState.cpp b/src/lib/platform/OSXKeyState.cpp
+index aad207290e..1f50697cea 100644
+--- a/src/lib/platform/OSXKeyState.cpp
++++ b/src/lib/platform/OSXKeyState.cpp
+@@ -131,8 +131,6 @@ static const KeyEntry    s_controlKeys[] = {
+     { kKeyEisuToggle, kVK_JIS_Eisu },
+     { kKeyKana, kVK_JIS_Kana },
+     { kKeyMuhenkan, s_int5VK },
+-    { kKeyHenkan, s_int4VK },
+-    { kKeyZenkaku, kVK_ANSI_Grave }
+ };
+ 
+ 
+
+From 645a0c9d569d5583f38ab1fb1dae669611174c98 Mon Sep 17 00:00:00 2001
+From: Dennis Gentry <dennis.gentry@gmail.com>
+Date: Wed, 6 Jul 2022 16:33:17 -0700
+Subject: [PATCH 2/3] Remove no-longer-possible Mojave build from azure
+
+---
+ azure-pipelines.yml | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/azure-pipelines.yml b/azure-pipelines.yml
+index e34a3bc52a..e137796945 100644
+--- a/azure-pipelines.yml
++++ b/azure-pipelines.yml
+@@ -91,10 +91,11 @@ jobs:
+           imageName: "macOS-10.15"
+           B_BUILD_TYPE: Release
+           BARRIER_VERSION_STAGE: Release
+-      mojave-Release:
+-          imageName: "macOS-10.14"
+-          B_BUILD_TYPE: Release
+-          BARRIER_VERSION_STAGE: Release
++      # Azure has removed the macOS-10.14 image, so this will never work
++      # mojave-Release:
++      #     imageName: "macOS-10.14"
++      #     B_BUILD_TYPE: Release
++      #     BARRIER_VERSION_STAGE: Release
+   pool:
+     vmImage: $(imageName)
+   variables:
+
+From ee11f5cafaffd034533aa1c13ff164e98f1a950e Mon Sep 17 00:00:00 2001
+From: Dennis Gentry <dennis.gentry@gmail.com>
+Date: Wed, 6 Jul 2022 16:42:39 -0700
+Subject: [PATCH 3/3] Remove Windows-breaking change that fixes Mac-warnings
+
+---
+ src/gui/src/Screen.cpp       | 10 +++++-----
+ src/gui/src/ServerConfig.cpp | 38 ++++++++++++++++++------------------
+ 2 files changed, 24 insertions(+), 24 deletions(-)
+
+diff --git a/src/gui/src/Screen.cpp b/src/gui/src/Screen.cpp
+index a694bcea46..1e3b8884fa 100644
+--- a/src/gui/src/Screen.cpp
++++ b/src/gui/src/Screen.cpp
+@@ -91,19 +91,19 @@ void Screen::saveSettings(QSettings& settings) const
+ 
+ QTextStream& Screen::writeScreensSection(QTextStream& outStream) const
+ {
+-  outStream << "\t" << name() << ":" << Qt::endl;
++    outStream << "\t" << name() << ":" << endl;
+ 
+     for (int i = 0; i < modifiers().size(); i++) {
+         auto mod = static_cast<Modifier>(i);
+         if (modifier(mod) != mod) {
+             outStream << "\t\t" << modifierName(mod) << " = " << modifierName(modifier(mod))
+-                      << Qt::endl;
++                      << endl;
+         }
+     }
+ 
+     for (int i = 0; i < fixes().size(); i++) {
+         auto fix = static_cast<Fix>(i);
+-        outStream << "\t\t" << fixName(fix) << " = " << (fixes()[i] ? "true" : "false") << Qt::endl;
++        outStream << "\t\t" << fixName(fix) << " = " << (fixes()[i] ? "true" : "false") << endl;
+     }
+ 
+     outStream << "\t\t" << "switchCorners = none ";
+@@ -112,9 +112,9 @@ QTextStream& Screen::writeScreensSection(QTextStream& outStream) const
+             outStream << "+" << switchCornerName(static_cast<SwitchCorner>(i)) << " ";
+         }
+     }
+-    outStream << Qt::endl;
++    outStream << endl;
+ 
+-    outStream << "\t\t" << "switchCornerSize = " << switchCornerSize() << Qt::endl;
++    outStream << "\t\t" << "switchCornerSize = " << switchCornerSize() << endl;
+ 
+     return outStream;
+ }
+diff --git a/src/gui/src/ServerConfig.cpp b/src/gui/src/ServerConfig.cpp
+index 856db6739b..3392572a1b 100644
+--- a/src/gui/src/ServerConfig.cpp
++++ b/src/gui/src/ServerConfig.cpp
+@@ -210,56 +210,56 @@ int ServerConfig::adjacentScreenIndex(int idx, int deltaColumn, int deltaRow) co
+ 
+ QTextStream& operator<<(QTextStream& outStream, const ServerConfig& config)
+ {
+-    outStream << "section: screens" << Qt::endl;
++    outStream << "section: screens" << endl;
+ 
+     for (const Screen& s : config.screens()) {
+         if (!s.isNull())
+             s.writeScreensSection(outStream);
+     }
+ 
+-    outStream << "end" << Qt::endl << Qt::endl;
++    outStream << "end" << endl << endl;
+ 
+-    outStream << "section: aliases" << Qt::endl;
++    outStream << "section: aliases" << endl;
+ 
+     for (const Screen& s : config.screens()) {
+         if (!s.isNull())
+             s.writeAliasesSection(outStream);
+     }
+ 
+-    outStream << "end" << Qt::endl << Qt::endl;
++    outStream << "end" << endl << endl;
+ 
+-    outStream << "section: links" << Qt::endl;
++    outStream << "section: links" << endl;
+ 
+     for (int i = 0; i < config.screens().size(); i++)
+         if (!config.screens()[i].isNull())
+         {
+-            outStream << "\t" << config.screens()[i].name() << ":" << Qt::endl;
++            outStream << "\t" << config.screens()[i].name() << ":" << endl;
+ 
+             for (unsigned int j = 0; j < sizeof(neighbourDirs) / sizeof(neighbourDirs[0]); j++)
+             {
+                 int idx = config.adjacentScreenIndex(i, neighbourDirs[j].x, neighbourDirs[j].y);
+                 if (idx != -1 && !config.screens()[idx].isNull())
+-                    outStream << "\t\t" << neighbourDirs[j].name << " = " << config.screens()[idx].name() << Qt::endl;
++                    outStream << "\t\t" << neighbourDirs[j].name << " = " << config.screens()[idx].name() << endl;
+             }
+         }
+ 
+-    outStream << "end" << Qt::endl << Qt::endl;
++    outStream << "end" << endl << endl;
+ 
+-    outStream << "section: options" << Qt::endl;
++    outStream << "section: options" << endl;
+ 
+     if (config.hasHeartbeat())
+-        outStream << "\t" << "heartbeat = " << config.heartbeat() << Qt::endl;
++        outStream << "\t" << "heartbeat = " << config.heartbeat() << endl;
+ 
+-    outStream << "\t" << "relativeMouseMoves = " << (config.relativeMouseMoves() ? "true" : "false") << Qt::endl;
+-    outStream << "\t" << "screenSaverSync = " << (config.screenSaverSync() ? "true" : "false") << Qt::endl;
+-    outStream << "\t" << "win32KeepForeground = " << (config.win32KeepForeground() ? "true" : "false") << Qt::endl;
+-    outStream << "\t" << "clipboardSharing = " << (config.clipboardSharing() ? "true" : "false") << Qt::endl;
++    outStream << "\t" << "relativeMouseMoves = " << (config.relativeMouseMoves() ? "true" : "false") << endl;
++    outStream << "\t" << "screenSaverSync = " << (config.screenSaverSync() ? "true" : "false") << endl;
++    outStream << "\t" << "win32KeepForeground = " << (config.win32KeepForeground() ? "true" : "false") << endl;
++    outStream << "\t" << "clipboardSharing = " << (config.clipboardSharing() ? "true" : "false") << endl;
+ 
+     if (config.hasSwitchDelay())
+-        outStream << "\t" << "switchDelay = " << config.switchDelay() << Qt::endl;
++        outStream << "\t" << "switchDelay = " << config.switchDelay() << endl;
+ 
+     if (config.hasSwitchDoubleTap())
+-        outStream << "\t" << "switchDoubleTap = " << config.switchDoubleTap() << Qt::endl;
++        outStream << "\t" << "switchDoubleTap = " << config.switchDoubleTap() << endl;
+ 
+     outStream << "\t" << "switchCorners = none ";
+     for (int i = 0; i < config.switchCorners().size(); i++) {
+@@ -268,15 +268,15 @@ QTextStream& operator<<(QTextStream& outStream, const ServerConfig& config)
+             outStream << "+" << config.switchCornerName(corner) << " ";
+         }
+     }
+-    outStream << Qt::endl;
++    outStream << endl;
+ 
+-    outStream << "\t" << "switchCornerSize = " << config.switchCornerSize() << Qt::endl;
++    outStream << "\t" << "switchCornerSize = " << config.switchCornerSize() << endl;
+ 
+     for (const Hotkey& hotkey : config.hotkeys()) {
+         outStream << hotkey;
+     }
+ 
+-    outStream << "end" << Qt::endl << Qt::endl;
++    outStream << "end" << endl << endl;
+ 
+     return outStream;
+ }
